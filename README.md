@@ -1,6 +1,6 @@
 # 导航中心
 
-## [数据结构与算法](http://blog.zhoulychn.com/algorithm/centert.html)
+## [数据结构与算法](http://blog.zhoulychn.com/algorithm/center.html)
 
 ## 多线程与同步
 
