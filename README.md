@@ -9,5 +9,3 @@
 ## [ava框架源码解析(暂未开始)](http://blog.zhoulychn.com/framework/center.html)
 
 ## [个人杂谈(更新中)](http://blog.zhoulychn.com/chat/center.html)
-
-                                                                                                                   邮箱:`zhoulychn@163.com`
