@@ -1,10 +1,12 @@
 # 导航中心
 
-## [数据结构与算法](http://blog.zhoulychn.com/algorithm/center.html)
+## [数据结构与算法(更新中)](http://blog.zhoulychn.com/algorithm/center.html)
 
-## 多线程与同步
+## [线程与同步(暂未开始)](http://blog.zhoulychn.com/concurrent/center.html)
 
-## [Java集合类源码解析](http://blog.zhoulychn.com/JavaSE/center.html)
+## [Java集合类源码解析(更新中)](http://blog.zhoulychn.com/JavaSE/center.html)
 
-## Java框架源码解析
+## [ava框架源码解析(暂未开始)](http://blog.zhoulychn.com/framework/center.html)
+
+## [个人杂谈(更新中)](http://blog.zhoulychn.com/chat/center.html)
 
