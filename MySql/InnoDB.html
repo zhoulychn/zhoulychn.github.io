@@ -1,0 +1,58 @@
+﻿<!DOCTYPE html>
+<html class="theme theme-white">
+<head>
+<meta charset="utf-8">
+<title>MySql技术内幕(二)：InnoDB存储引擎</title>
+<link href="https://www.zybuluo.com/static/assets/template-theme-white.css" rel="stylesheet" media="screen">
+<style type="text/css">
+
+#wmd-preview h1  {
+    color: #0077bb; /* 将标题改为蓝色 */
+}</style>
+</head>
+<body class="theme theme-white">
+<div id="wmd-preview" class="wmd-preview wmd-preview-full-reader"><div class="md-section-divider"></div><div class="md-section-divider"></div><h1 data-anchor-id="hwh2" id="mysql技术内幕二innodb存储引擎">MySql技术内幕(二)：InnoDB存储引擎</h1><p data-anchor-id="sfiy"><code>MySql技术内幕</code></p><p data-anchor-id="l0xl"><a href="http://blog.zhoulychn.com/MySql/center.html" target="_blank">点击返回导航页</a></p><hr><p data-anchor-id="vglh"><div class="toc"><div class="toc">
+<ul>
+<li><a href="#mysql技术内幕二innodb存储引擎">MySql技术内幕(二)：InnoDB存储引擎</a><ul>
+<li><a href="#一innodb概述">一、InnoDb概述</a></li>
+<li><a href="#二innodb体系架构">二、InnoDb体系架构</a><ul>
+<li><a href="#1后台线程">1、后台线程</a></li>
+<li><a href="#2内存区域">2、内存区域</a></li>
+</ul>
+</li>
+<li><a href="#三checkpoint">三、CheckPoint</a></li>
+<li><a href="#四master-thread">四、Master Thread</a></li>
+<li><a href="#五innodb关键特性">五、InnoDB关键特性</a><ul>
+<li><a href="#1插入缓冲">1、插入缓冲</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</div>
+</div>
+</p><hr><div class="md-section-divider"></div><h2 data-anchor-id="q02r" id="一innodb概述">一、InnoDb概述</h2><p data-anchor-id="r9d3">InnoDB是第一个完整支持ACID事务的引擎，特点有行锁，支持MVCC，支持外键，一致性非锁定读。InnoDb是一个高性能、高可用、高可扩展的存储引擎。</p><div class="md-section-divider"></div><h2 data-anchor-id="qirh" id="二innodb体系架构">二、InnoDb体系架构</h2><p data-anchor-id="fpf1"><img src="http://static.zybuluo.com/zy380104192/uk3qobd5vflioyc2h0s758t2/image_1c96hmi8ib76gpvseq16hcphq9.png" alt="image_1c96hmi8ib76gpvseq16hcphq9.png-127.5kB"></p><div class="md-section-divider"></div><h3 data-anchor-id="kmkk" id="1后台线程">1、后台线程</h3><p data-anchor-id="u7g2">后台线程的作用：</p><ul data-anchor-id="s4ty">
+<li>刷新内存池的数据，保存内存缓存的数据更新。</li>
+<li>将已修改的数据刷新到磁盘文件，保证数据库异常的时候可以恢复数据。</li>
+</ul><p data-anchor-id="5l0r">（1） <code>Master Thread</code></p><p data-anchor-id="efkj">Master Thread是核心线程，主要作用是异步刷新缓冲池的数据到磁盘，保证数据一致性，脏页的刷新，合并插入缓冲，undo页回收等。</p><p data-anchor-id="d3pf">（2） <code>IO Thread</code></p><p data-anchor-id="4esd">在InnoDB中大量地使用了<code>AIO</code>(异步读写)来处理IO请求，用以提升数据库性能。</p><p data-anchor-id="73s6">IO Thread负责IO请求的回调处理，有4种类型，分别为：<code>write</code>、<code>read</code>、<code>insert buffer</code>和<code>log</code>。</p><p data-anchor-id="bb07">（3） <code>Purge Thread</code></p><p data-anchor-id="ruze">当事务提交后，undo log就不需要了，Purge Thread就是回收已经分配的undo页。</p><p data-anchor-id="j4n9">（4） <code>Page Cleaner Thread</code></p><p data-anchor-id="zs36">负责脏页的刷新操作，减轻Master Thread的工作。</p><div class="md-section-divider"></div><h3 data-anchor-id="kqu7" id="2内存区域">2、内存区域</h3><p data-anchor-id="bi0o">（1） 缓冲池</p><p data-anchor-id="y9ow">MySql数据库时基于磁盘的，所以需要缓冲池来解决CPU和磁盘的数据不匹配问题，缓冲池就是一个内存区域。</p><p data-anchor-id="n3ig">数据库中读取页时，会把磁盘中读取的页放进缓冲池中，下一次再读取到相同的页时，会现在缓冲池中查找，如果查找到了就直接读取，否则再去磁盘中读取。</p><p data-anchor-id="zur5">数据库的修改操作则是先修改缓冲池中的页，然后刷新到磁盘中，刷新操作通过CheckPoint机制实现。</p><p data-anchor-id="nlvt">每个页根据Hash值分配到不同的缓冲池实例中，减少数据库的资源竞争。</p><p data-anchor-id="34id">缓冲池管理：</p><p data-anchor-id="jugs">缓冲池对页的管理是通过LRU(Latest Recent Used)算法实现，基本的结构一个双向链表，通过队列的操作实现，队列3/8处的位置称为mid point，在此之前的部分称为young区，之后的成为old区。</p><p data-anchor-id="cqkw">每次插入新的页都是在mid point位置，如果链表已满，如果old区满，删除表位的block。young区中未被访问的结点向后移动，old中被访问的结点向前移动。</p><p data-anchor-id="lu3i">LRU中被修改的页成为脏页，即缓冲池和磁盘不一致的数据，脏页既存在于LRU列表，也存在于Flush列表，Flush列表用来管理需要被刷新到磁盘的页。</p><p data-anchor-id="871l">（2） redo缓冲区</p><p data-anchor-id="59zn">InnoDB会把redo信息先存放到这个缓冲区，后续会刷新到redo文件。刷新redo文件并不是时刻都在发生，而是需要触发刷新redo文件的条件：</p><ul data-anchor-id="vv79">
+<li>Master Thread每秒定时刷新</li>
+<li>事务提交</li>
+<li>redo缓冲区空间小于一半</li>
+</ul><div class="md-section-divider"></div><h2 data-anchor-id="hicn" id="三checkpoint">三、CheckPoint</h2><p data-anchor-id="6ny2">缓冲池解决了CPU和磁盘速度的不匹配，但是并不是每一次对页进行修改后都会立即刷新到磁盘，防止过大的CPU资源消耗。另外，当缓冲池的页刷新到磁盘发生故障时，为了保证数据能被恢复，数据库都会采用<code>Write Ahead Log</code>策略，即事务提交时，先写redo日志，再修改页。数据丢失时，再通过redo日志恢复，保证了事务ACID中的持久性要求。</p><p data-anchor-id="5mez">CheckPoint的作用：</p><ul data-anchor-id="mwo1">
+<li>数据库宕机时，只需要重做CheckPoint之后的页，这样就可以减少数据恢复时间。</li>
+<li>缓冲池空间不足时，LRU列表会溢出最少方法的页，如果是脏页则刷新到磁盘。</li>
+<li>redo日志不可用时，刷新脏页。</li>
+</ul><p data-anchor-id="re7x">CheckPoint的类型分为两种：<code>Sharp CheckPoint(全局刷新)</code>和<code>Fuzzy CheckPoint(局部刷新)</code>。</p><p data-anchor-id="n1h8">Sharp CheckPoint：将缓冲池中所有的脏页刷新到磁盘，一般发生在数据库关闭时。</p><p data-anchor-id="bay8">Fuzzy CheckPoint：当数据库在运行时，如果使用Sharp CheckPoint，则会影响数据库的性能，所以只进行一部分数据的刷新。</p><div class="md-section-divider"></div><h2 data-anchor-id="uvpv" id="四master-thread">四、Master Thread</h2><p data-anchor-id="r1kq">Master Thread具有最高的线程优先级，由多个循环构成：主循环、后台循环、刷新循环、暂停循环。各个循环之间的切换是通过线程休眠实现的。</p><p data-anchor-id="6779">主循环中每秒发生的操作有：</p><ul data-anchor-id="fiux">
+<li>刷新日志缓冲到磁盘(总是)</li>
+<li>合并插入缓冲(可能)</li>
+<li>刷新至多100个缓冲池脏页到磁盘(可能)</li>
+<li>没有活动则切换到后台循环(可能)</li>
+</ul><p data-anchor-id="tfae">主循环中每十秒发生的操作有：</p><ul data-anchor-id="8flk">
+<li>刷新100个脏页到磁盘(可能)</li>
+<li>合并至多5个插入缓冲(总是)</li>
+<li>将日志缓冲刷新到磁盘(总是)</li>
+<li>删除无用的undo页(总是)</li>
+<li>刷新100个或者10个脏页到磁盘(总是)</li>
+</ul><p data-anchor-id="d0z2">上述这些操作时较早版本引擎的具体方案，当然后面一直对其进行优化，很多细节已经不同，只需要大概了解即可。</p><div class="md-section-divider"></div><h2 data-anchor-id="hhhv" id="五innodb关键特性">五、InnoDB关键特性</h2><div class="md-section-divider"></div><h3 data-anchor-id="01si" id="1插入缓冲">1、插入缓冲</h3></div>
+</body>
+</html>

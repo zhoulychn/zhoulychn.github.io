@@ -1,0 +1,51 @@
+﻿<!DOCTYPE html>
+<html class="theme theme-white">
+<head>
+<meta charset="utf-8">
+<title>MySql技术内幕(一)：体系结构</title>
+<link href="https://www.zybuluo.com/static/assets/template-theme-white.css" rel="stylesheet" media="screen">
+<style type="text/css">
+
+#wmd-preview h1  {
+    color: #0077bb; /* 将标题改为蓝色 */
+}</style>
+</head>
+<body class="theme theme-white">
+<div id="wmd-preview" class="wmd-preview wmd-preview-full-reader"><div class="md-section-divider"></div><div class="md-section-divider"></div><h1 data-anchor-id="2x5l" id="mysql技术内幕一体系结构">MySql技术内幕(一)：体系结构</h1><p data-anchor-id="pjr4"><code>MySql技术内幕</code></p><p data-anchor-id="kq5r"><a href="http://blog.zhoulychn.com/MySql/center.html" target="_blank">点击返回导航页</a></p><hr><p data-anchor-id="cdh3"><div class="toc"><div class="toc">
+<ul>
+<li><a href="#mysql技术内幕一体系结构">MySql技术内幕(一)：体系结构</a><ul>
+<li><a href="#一数据库和数据库实例">一、数据库和数据库实例</a></li>
+<li><a href="#二mysql体系结构">二、MySql体系结构</a></li>
+<li><a href="#三mysql存储引擎">三、MySql存储引擎</a></li>
+<li><a href="#四存储引擎的比较">四、存储引擎的比较</a></li>
+</ul>
+</li>
+</ul>
+</div>
+</div>
+</p><hr><div class="md-section-divider"></div><h2 data-anchor-id="ld6z" id="一数据库和数据库实例">一、数据库和数据库实例</h2><ul data-anchor-id="8ovy">
+<li><p>数据库：物理操作系统文件或其他形式文件类型集合。虽然有可能是内存的文件，但是也属其定义范围。</p></li>
+<li><p>数据库实例：实例是由后台线程和一个共享内存区构成。</p></li>
+</ul><p data-anchor-id="05oi">两者的概念是完全不一样的，通常情况下一个数据库对应一个实例，但是在集群的环境下，一个数据库可对应多个实例。</p><p data-anchor-id="yrva">MySql实例在系统中就是一个名为<code>mysqld</code>的进程，但是包含了多个线程。</p><div class="md-section-divider"></div><h2 data-anchor-id="bpi0" id="二mysql体系结构">二、MySql体系结构</h2><p data-anchor-id="uzc9"><img src="http://static.zybuluo.com/zy380104192/v4eq5esyglfwa62kn170syif/image_1c96hsub1d6ocop1ma76nui7b9.png" alt="image_1c96hsub1d6ocop1ma76nui7b9.png-351.9kB" title=""></p><p data-anchor-id="c2ey">MySql的表存储引擎是插件式的，只是提供了一系统的标准，具体的实现与存储引擎本身有关。所以MySql的存储引擎是基于表的，而不是数据库。</p><div class="md-section-divider"></div><h2 data-anchor-id="q6wc" id="三mysql存储引擎">三、MySql存储引擎</h2><p data-anchor-id="bb9o"><strong>InnoDB存储引擎</strong> <br>
+　 <br>
+InnoDB存储引擎<strong>支持事务</strong>，特点是行锁设计、支持外键，并支持非锁定读(默认读取操作不会产生锁)，是MySQL默认的存储引擎。 <br>
+　 <br>
+每个InnoDB存储引擎的表可以单独放到一个独立的ibd文件中，另外支持裸设备(row disk)建立表空间。 <br>
+　 <br>
+InnoDB用过多版本并发控制获取高并发性，实现SQL标准的4种隔离级别，默认为REPEATABLE级别。同时，使用next-keylocking的策略避免幻读。此外，InnoDB还提供插入缓存、二次写、自适应哈希索引、预读等高性能高可用功能。 <br>
+　 <br>
+InnoDB采用聚集的方式存储表数据，每张表的存储都是按主键的顺序存放。如果没有指定主键，会为每一行生成6字节的rowid作为主键。 <br>
+　 <br>
+<strong>MyISAM存储引擎</strong></p><p data-anchor-id="7iov">MyISAM不支持事务、表锁，支持全文索引。MyISAM与众不同的地方是缓冲池只缓存<strong>索引文件</strong>，而不是缓存数据文件(由操作系统完成)。 <br>
+　 <br>
+MyISAM表由MYD和MYI组成，MYD存放数据文件，MYI存放索引文件。</p><p data-anchor-id="iv1o"><strong>NDB存储引擎</strong></p><p data-anchor-id="9pmw">NDB是一个集群存储引擎，特点是数据全部放在内存中，速度极快，并且添加NDB数据存储结点可以线性地提高数据库性能，是高可用高性能的集群系统。 <br>
+　 <br>
+NDB有一个问题就是连接查询操作由MySQL数据库层完成，而不是存储引擎完成。复杂的连接操作会有很大开销，所以速度很慢。 <br>
+　 <br>
+<strong>Memory存储引擎</strong></p><p data-anchor-id="h1rp">Memory存储引擎将表数据存放在内存中，如果数据库重启或者崩溃，表数据会消失。Memory存储引擎默认使用哈希索引。 <br>
+　 <br>
+Memory存储引擎速度非常快，但是使用上有限制。只支持表锁，并发性能差，不支持TEXT和BLOB字段。最重要的是，存储变长字段是按照定长字段进行，浪费内存。 <br>
+　 <br>
+MySQL数据库使用Memory存储引擎作为临时表来存放查询的中间结果集。如果中间结果集大于Memory存储引擎表的容量，或者含有TEXT和BLOB字段，会转换成MyISAM表存放在磁盘，影响查询性能。</p><div class="md-section-divider"></div><h2 data-anchor-id="mmxt" id="四存储引擎的比较">四、存储引擎的比较</h2><p data-anchor-id="bey9"><img src="http://static.zybuluo.com/zy380104192/g0n9hla16ydcy0u71pxznms1/image_1c96hvf1g379kva3gp1uujc7om.png" alt="image_1c96hvf1g379kva3gp1uujc7om.png-263.9kB" title=""></p><p data-anchor-id="37e4">下图给出了各种存储引擎的详细特性，可以根据实际需要选择不同的引擎。</p></div>
+</body>
+</html>
