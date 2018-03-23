@@ -22,16 +22,12 @@
 </li>
 <li><a href="#三checkpoint">三、CheckPoint</a></li>
 <li><a href="#四master-thread">四、Master Thread</a></li>
-<li><a href="#五innodb关键特性">五、InnoDB关键特性</a><ul>
-<li><a href="#1插入缓冲">1、插入缓冲</a></li>
-</ul>
-</li>
 </ul>
 </li>
 </ul>
 </div>
 </div>
-</p><hr><div class="md-section-divider"></div><h2 data-anchor-id="q02r" id="一innodb概述">一、InnoDb概述</h2><p data-anchor-id="r9d3">InnoDB是第一个完整支持ACID事务的引擎，特点有行锁，支持MVCC，支持外键，一致性非锁定读。InnoDb是一个高性能、高可用、高可扩展的存储引擎。</p><div class="md-section-divider"></div><h2 data-anchor-id="qirh" id="二innodb体系架构">二、InnoDb体系架构</h2><p data-anchor-id="fpf1"><img src="http://static.zybuluo.com/zy380104192/uk3qobd5vflioyc2h0s758t2/image_1c96hmi8ib76gpvseq16hcphq9.png" alt="image_1c96hmi8ib76gpvseq16hcphq9.png-127.5kB"></p><div class="md-section-divider"></div><h3 data-anchor-id="kmkk" id="1后台线程">1、后台线程</h3><p data-anchor-id="u7g2">后台线程的作用：</p><ul data-anchor-id="s4ty">
+</p><hr><div class="md-section-divider"></div><h2 data-anchor-id="q02r" id="一innodb概述">一、InnoDb概述</h2><p data-anchor-id="r9d3">InnoDB是第一个完整支持ACID事务的引擎，特点有行锁，支持MVCC，支持外键，一致性非锁定读。InnoDb是一个高性能、高可用、高可扩展的存储引擎。</p><div class="md-section-divider"></div><h2 data-anchor-id="qirh" id="二innodb体系架构">二、InnoDb体系架构</h2><p data-anchor-id="fpf1"><img src="http://static.zybuluo.com/zy380104192/uk3qobd5vflioyc2h0s758t2/image_1c96hmi8ib76gpvseq16hcphq9.png" alt="image_1c96hmi8ib76gpvseq16hcphq9.png-127.5kB" title=""></p><div class="md-section-divider"></div><h3 data-anchor-id="kmkk" id="1后台线程">1、后台线程</h3><p data-anchor-id="u7g2">后台线程的作用：</p><ul data-anchor-id="s4ty">
 <li>刷新内存池的数据，保存内存缓存的数据更新。</li>
 <li>将已修改的数据刷新到磁盘文件，保证数据库异常的时候可以恢复数据。</li>
 </ul><p data-anchor-id="5l0r">（1） <code>Master Thread</code></p><p data-anchor-id="efkj">Master Thread是核心线程，主要作用是异步刷新缓冲池的数据到磁盘，保证数据一致性，脏页的刷新，合并插入缓冲，undo页回收等。</p><p data-anchor-id="d3pf">（2） <code>IO Thread</code></p><p data-anchor-id="4esd">在InnoDB中大量地使用了<code>AIO</code>(异步读写)来处理IO请求，用以提升数据库性能。</p><p data-anchor-id="73s6">IO Thread负责IO请求的回调处理，有4种类型，分别为：<code>write</code>、<code>read</code>、<code>insert buffer</code>和<code>log</code>。</p><p data-anchor-id="bb07">（3） <code>Purge Thread</code></p><p data-anchor-id="ruze">当事务提交后，undo log就不需要了，Purge Thread就是回收已经分配的undo页。</p><p data-anchor-id="j4n9">（4） <code>Page Cleaner Thread</code></p><p data-anchor-id="zs36">负责脏页的刷新操作，减轻Master Thread的工作。</p><div class="md-section-divider"></div><h3 data-anchor-id="kqu7" id="2内存区域">2、内存区域</h3><p data-anchor-id="bi0o">（1） 缓冲池</p><p data-anchor-id="y9ow">MySql数据库时基于磁盘的，所以需要缓冲池来解决CPU和磁盘的数据不匹配问题，缓冲池就是一个内存区域。</p><p data-anchor-id="n3ig">数据库中读取页时，会把磁盘中读取的页放进缓冲池中，下一次再读取到相同的页时，会现在缓冲池中查找，如果查找到了就直接读取，否则再去磁盘中读取。</p><p data-anchor-id="zur5">数据库的修改操作则是先修改缓冲池中的页，然后刷新到磁盘中，刷新操作通过CheckPoint机制实现。</p><p data-anchor-id="nlvt">每个页根据Hash值分配到不同的缓冲池实例中，减少数据库的资源竞争。</p><p data-anchor-id="34id">缓冲池管理：</p><p data-anchor-id="jugs">缓冲池对页的管理是通过LRU(Latest Recent Used)算法实现，基本的结构一个双向链表，通过队列的操作实现，队列3/8处的位置称为mid point，在此之前的部分称为young区，之后的成为old区。</p><p data-anchor-id="cqkw">每次插入新的页都是在mid point位置，如果链表已满，如果old区满，删除表位的block。young区中未被访问的结点向后移动，old中被访问的结点向前移动。</p><p data-anchor-id="lu3i">LRU中被修改的页成为脏页，即缓冲池和磁盘不一致的数据，脏页既存在于LRU列表，也存在于Flush列表，Flush列表用来管理需要被刷新到磁盘的页。</p><p data-anchor-id="871l">（2） redo缓冲区</p><p data-anchor-id="59zn">InnoDB会把redo信息先存放到这个缓冲区，后续会刷新到redo文件。刷新redo文件并不是时刻都在发生，而是需要触发刷新redo文件的条件：</p><ul data-anchor-id="vv79">
@@ -53,6 +49,6 @@
 <li>将日志缓冲刷新到磁盘(总是)</li>
 <li>删除无用的undo页(总是)</li>
 <li>刷新100个或者10个脏页到磁盘(总是)</li>
-</ul><p data-anchor-id="d0z2">上述这些操作时较早版本引擎的具体方案，当然后面一直对其进行优化，很多细节已经不同，只需要大概了解即可。</p><div class="md-section-divider"></div><h2 data-anchor-id="hhhv" id="五innodb关键特性">五、InnoDB关键特性</h2><div class="md-section-divider"></div><h3 data-anchor-id="01si" id="1插入缓冲">1、插入缓冲</h3></div>
+</ul><p data-anchor-id="d0z2">上述这些操作时较早版本引擎的具体方案，当然后面一直对其进行优化，很多细节已经不同，只需要大概了解即可。</p></div>
 </body>
 </html>
