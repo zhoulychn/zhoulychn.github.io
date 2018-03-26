@@ -8,4 +8,4 @@
 
 ## [MySql技术内幕](http://blog.zhoulychn.com/MySql/center.html)
 
-## [分布式系统设计]
+## 分布式系统设计
