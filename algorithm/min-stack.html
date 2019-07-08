@@ -11,7 +11,7 @@
 }</style>
 </head>
 <body class="theme theme-white">
-<div id="wmd-preview" class="wmd-preview wmd-preview-full-reader"><div class="md-section-divider"></div><div class="md-section-divider"></div><h1 data-anchor-id="iip6" id="最小栈实现">最小栈实现</h1><p data-anchor-id="ft40"><code>数据结构与算法</code></p><p data-anchor-id="d43o"><a href="http://blog.zhoulychn.com/algorithm/center.html" target="_blank">点击返回导航页</a></p><hr><div class="md-section-divider"></div><h2 data-anchor-id="djj9" id="问题描述">问题描述</h2><p data-anchor-id="4ne9">实现一个带有取最小值min方法的栈，min方法将返回当前栈中的最小值。</p><p data-anchor-id="bzxv">你实现的栈将支持push，pop 和 min 操作，所有操作要求都在O(1)时间内完成。</p><div class="md-section-divider"></div><h2 data-anchor-id="sof5" id="算法思路">算法思路</h2><p data-anchor-id="7ng6">构造两个栈A，B。前者保存数据，后者保存最小值的索引。</p><blockquote data-anchor-id="feix" class="white-blockquote">
+<div id="wmd-preview" class="wmd-preview wmd-preview-full-reader"><div class="md-section-divider"></div><div class="md-section-divider"></div><h1 data-anchor-id="iip6" id="最小栈实现">最小栈实现</h1><p data-anchor-id="ft40"><code>数据结构与算法</code></p><p data-anchor-id="d43o"><a href="http://zhoulychn.github.io/algorithm/center.html" target="_blank">点击返回导航页</a></p><hr><div class="md-section-divider"></div><h2 data-anchor-id="djj9" id="问题描述">问题描述</h2><p data-anchor-id="4ne9">实现一个带有取最小值min方法的栈，min方法将返回当前栈中的最小值。</p><p data-anchor-id="bzxv">你实现的栈将支持push，pop 和 min 操作，所有操作要求都在O(1)时间内完成。</p><div class="md-section-divider"></div><h2 data-anchor-id="sof5" id="算法思路">算法思路</h2><p data-anchor-id="7ng6">构造两个栈A，B。前者保存数据，后者保存最小值的索引。</p><blockquote data-anchor-id="feix" class="white-blockquote">
   <p>push：如果时第一次压入栈，这个数就是最小值，压入两个栈。后续元素如果小于当前最小值，则先入数据栈，然后将其索引压入最小值栈</p>
   
   <p>pop：如果出栈的元素时最小值，则把其索引在最小值栈中清除。</p>
